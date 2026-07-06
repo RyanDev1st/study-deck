@@ -45,8 +45,10 @@
     "3. ANSWER GATE = NOT ANSWERED: do not reveal or hint which option is correct, and do not recite " +
     "the explanations. Help them reason toward it with questions and concept clarification. Only reveal " +
     "the answer if they explicitly ask for it.\n" +
-    "4. ANSWER GATE = ANSWERED: explain fully. Why the correct option is right, why the tempting wrong " +
-    "one is wrong.\n" +
+    "4. ANSWER GATE = ANSWERED: be personal. The context marks which option the student CHOSE. Speak to " +
+    "THEM: if they were wrong, name what they picked, explain why that specific choice is tempting but " +
+    "wrong, then why the correct one is right. If they were right, confirm briefly and add the one insight " +
+    "that makes it stick. Address the student as 'you', referring to their actual choice.\n" +
     "5. Keep replies short (2 to 4 sentences), plain language, a tiny example only if it helps. Use light markdown.";
 
   /*
@@ -62,23 +64,29 @@
     var L = [];
     L.push("=== QUESTION CURRENTLY ON THE STUDENT'S SCREEN ===");
     L.push(q.questionText || "");
+    var chose = (typeof opts.choice === "number") ? opts.choice : -1;   // MCQ chosen index
     if (q.type === "FIB") {
       L.push("\nType: fill-in-the-blank.");
       L.push("Correct answer: " + (q.correctAnswer || ""));
+      if (answered && opts.raw != null) L.push("The student typed: \"" + opts.raw + "\"" + (opts.correct ? " (correct)" : " (incorrect)"));
       if (q.explanation) L.push("Explanation: " + q.explanation);
     } else if (Array.isArray(q.answerOptions)) {
       L.push("\nOptions (labelled exactly as the student sees them):");
       q.answerOptions.forEach(function (o, i) {
         var correct = (o.isCorrect === "true" || o.isCorrect === true);
-        L.push(String.fromCharCode(65 + i) + ". " + o.answerText + (correct ? "   [THIS IS THE CORRECT OPTION]" : ""));
+        var tags = "";
+        if (correct) tags += "   [THIS IS THE CORRECT OPTION]";
+        if (answered && i === chose) tags += "   [THE STUDENT CHOSE THIS]";
+        L.push(String.fromCharCode(65 + i) + ". " + o.answerText + tags);
         if (o.explanation) L.push("     why: " + o.explanation);
       });
     }
     if (q.sectionTitle) L.push("\nTopic: " + q.sectionTitle);
     L.push("\n=== ANSWER GATE ===");
     if (answered) {
-      L.push("The student HAS ANSWERED" + (opts.correct != null ? " (they got it " + (opts.correct ? "RIGHT" : "WRONG") + ")" : "") +
-        ". You may discuss the correct option and all explanations freely.");
+      var pickLabel = (chose >= 0) ? " and CHOSE option " + String.fromCharCode(65 + chose) : "";
+      L.push("The student HAS ANSWERED" + pickLabel + (opts.correct != null ? " (they got it " + (opts.correct ? "RIGHT" : "WRONG") + ")" : "") +
+        ". Speak directly to what they chose: if wrong, explain why their pick is tempting but incorrect, then why the correct one is right.");
     } else {
       L.push("The student has NOT ANSWERED yet. Do NOT reveal or hint which option is correct and do " +
         "NOT recite the explanations above. Use them only to guide the student's reasoning. Reveal the " +

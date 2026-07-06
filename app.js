@@ -28,7 +28,7 @@
    "btn-review-due","due-pill","btn-collapse","btn-open-margin","btn-theme","margin",
    "s-due","s-new","s-learn","s-retention","streak-n","reviewed-n","forecast","mastery",
    "theory-panel","theory-content","close-theory","chat-dock","chat-fab","close-chat","chat-log",
-   "chat-text","chat-send","chat-stop","btn-chat-cfg","ai-dot","chat-model","scrim","toast",
+   "chat-text","chat-send","chat-stop","chat-explain","btn-chat-cfg","ai-dot","chat-model","scrim","toast",
    "btn-progress","settings-panel","close-settings","set-key","set-refresh","set-save","set-status",
    "bank-name","bank-count","btn-bank-import","btn-bank-export","btn-bank-reset","bank-file","bank-status",
    "new-modal","close-modal","m-mode","m-topic","topic-field","m-type","m-count","btn-start"
@@ -690,10 +690,12 @@
     inputEnabled(false);
   }
 
+  var DOCK_KEY = "sd_dock_open";
   function openDock(prefill) {
     el["chat-dock"].classList.remove("hidden");
     el["chat-dock"].setAttribute("aria-hidden", "false");
     el["chat-fab"].classList.add("hidden");
+    try { localStorage.setItem(DOCK_KEY, "1"); } catch (e) {}
     if (!aiCap) aiCap = AIChat.capability();
 
     if (!aiCap.ok) { renderUnavailable(); return; }
@@ -701,20 +703,22 @@
     if (!el["chat-log"].dataset.started) {
       el["chat-log"].innerHTML = "";
       inputEnabled(true);
-      addMsg("sys", "Free models via OpenRouter. Pick a model above, ask about the current question, or press E.");
+      addMsg("sys", "Ask about the current question, tap the lightbulb to explain it, or just chat. The panel stays open as you move through questions.");
       el["chat-log"].dataset.started = "1";
       if (!el["chat-model"].options.length) populateModels();
     } else {
       inputEnabled(true);
     }
     if (prefill) { el["chat-text"].value = prefill; sendChat(); }
-    else setTimeout(function () { el["chat-text"].focus(); }, 60);
+    else if (document.activeElement !== el["chat-text"]) setTimeout(function () { el["chat-text"].focus(); }, 60);
   }
   function closeDock() {
     el["chat-dock"].classList.add("hidden");
     el["chat-dock"].setAttribute("aria-hidden", "true");
     el["chat-fab"].classList.remove("hidden");
+    try { localStorage.setItem(DOCK_KEY, "0"); } catch (e) {}
   }
+  function dockWasOpen() { try { return localStorage.getItem(DOCK_KEY) === "1"; } catch (e) { return false; } }
 
   function currentQuestionForChat() {
     var s = activeSession(); if (!s) return null;
@@ -736,7 +740,12 @@
     var s = activeSession();
     var q = currentQuestionForChat();
     var ans = s ? s.answers[s.pos] : null;
-    var ctx = q ? AIChat.questionContext(q, { answered: !!ans, correct: ans ? ans.correct : null }) : "";
+    var ctx = q ? AIChat.questionContext(q, {
+      answered: !!ans,
+      correct: ans ? ans.correct : null,
+      choice: ans && typeof ans.choice === "number" ? ans.choice : undefined,
+      raw: ans ? ans.raw : undefined
+    }) : "";
     var msgs = [{ role: "system", content: AIChat.SYSTEM_PROMPT }].concat(prior);
     if (ctx) msgs.push({ role: "system", content: ctx });
     msgs.push({ role: "user", content: text });
@@ -908,6 +917,7 @@
     // floating chat dock
     el["chat-fab"].addEventListener("click", function () { openDock(); });
     el["close-chat"].addEventListener("click", closeDock);
+    el["chat-explain"].addEventListener("click", explainCurrent);
     el["chat-send"].addEventListener("click", sendChat);
     el["chat-stop"].addEventListener("click", function () { if (chatAbort) chatAbort.abort(); });
     el["chat-text"].addEventListener("input", autosize);
@@ -956,10 +966,13 @@
 
     initAI(); // async, updates the AI status dot
 
+    // restore the tutor dock if it was left open (persistent across reloads)
+    if (dockWasOpen()) openDock();
+
     // gentle intro: margin + fab settle in
     if (fx.enabled) {
       G.from(".margin-head, .actions, .sessions-rule, #session-list", { opacity: 0, x: -14, duration: 0.4, stagger: 0.06, ease: "power2.out" });
-      G.from("#chat-fab", { scale: 0, duration: 0.5, ease: "back.out(2)", delay: 0.4 });
+      if (!dockWasOpen()) G.from("#chat-fab", { scale: 0, duration: 0.5, ease: "back.out(2)", delay: 0.4 });
     }
   }
 

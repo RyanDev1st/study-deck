@@ -1,0 +1,13 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# local throwaways
+scratch_*
+*.log
+
+# personal banks (keep your private question banks out of git)
+banks/private/
+banks/*.local.json

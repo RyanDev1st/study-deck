@@ -1,0 +1,59 @@
+{
+  "title": "Sample Deck",
+  "quizzes": [
+    {
+      "id": 1,
+      "title": "Geography",
+      "quiz": [
+        {
+          "questionText": "What is the capital of Japan?",
+          "answerOptions": [
+            { "answerText": "Tokyo", "isCorrect": "true", "explanation": "Correct. Tokyo has been Japan's capital since 1868." },
+            { "answerText": "Kyoto", "isCorrect": "false", "explanation": "Kyoto was the imperial capital until 1868, then the seat moved to Tokyo." },
+            { "answerText": "Osaka", "isCorrect": "false", "explanation": "Osaka is a major city but has never been the national capital." }
+          ]
+        },
+        {
+          "questionText": "Which is the longest river in the world?",
+          "answerOptions": [
+            { "answerText": "The Nile", "isCorrect": "true", "explanation": "Correct by the most common measurement, at roughly 6,650 km." },
+            { "answerText": "The Amazon", "isCorrect": "false", "explanation": "The Amazon carries the most water, but is usually ranked slightly shorter than the Nile." },
+            { "answerText": "The Yangtze", "isCorrect": "false", "explanation": "The Yangtze is the longest in Asia, but shorter than the Nile and Amazon." }
+          ]
+        },
+        {
+          "type": "FIB",
+          "questionText": "The largest hot desert on Earth is the ______ Desert.",
+          "correctAnswer": "Sahara",
+          "explanation": "The Sahara spans about 9.2 million km across North Africa. (This is a fill-in-the-blank item.)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Fractions",
+      "quiz": [
+        {
+          "questionText": "What is 1/2 + 1/4?",
+          "answerOptions": [
+            { "answerText": "3/4", "isCorrect": "true", "explanation": "Correct. Convert to a common denominator: 2/4 + 1/4 = 3/4." },
+            { "answerText": "2/6", "isCorrect": "false", "explanation": "You cannot add fractions by adding numerators and denominators separately." },
+            { "answerText": "1/8", "isCorrect": "false", "explanation": "That is 1/2 times 1/4, not the sum." }
+          ]
+        },
+        {
+          "questionText": "Which fraction is largest?",
+          "answerOptions": [
+            { "answerText": "5/8", "isCorrect": "true", "explanation": "Correct. 5/8 = 0.625, larger than the others." },
+            { "answerText": "1/2", "isCorrect": "false", "explanation": "1/2 = 0.5, smaller than 5/8." },
+            { "answerText": "3/5", "isCorrect": "false", "explanation": "3/5 = 0.6, just under 5/8." }
+          ]
+        }
+      ]
+    }
+  ],
+  "theory": {
+    "Geography": "<h3>Geography basics</h3><ul><li><strong>Capitals</strong> are the seats of government; they are not always the largest or oldest city.</li><li><strong>River length</strong> depends on how the source and mouth are measured, which is why rankings vary.</li></ul>",
+    "Fractions": "<h3>Adding fractions</h3><ul><li>Find a <strong>common denominator</strong>, convert each fraction, then add the numerators.</li><li>To compare fractions, convert them to decimals or to a common denominator.</li></ul>"
+  }
+}

@@ -887,7 +887,7 @@
 
   function explainCurrent() {
     var q = currentQuestionForChat(); if (!q) return;
-    openDock("Explain this question simply and tell me the key concept to remember.");
+    openDock("Explain this one simply, and what's the key idea to remember?");
   }
 
   // ---- wire events ----

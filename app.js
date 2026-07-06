@@ -969,10 +969,10 @@
     // restore the tutor dock if it was left open (persistent across reloads)
     if (dockWasOpen()) openDock();
 
-    // gentle intro: margin + fab settle in
+    // gentle intro for the margin only. The chat bubble is NOT animated from
+    // scale 0 — a stalled tween would leave it invisible; it shows via CSS.
     if (fx.enabled) {
       G.from(".margin-head, .actions, .sessions-rule, #session-list", { opacity: 0, x: -14, duration: 0.4, stagger: 0.06, ease: "power2.out" });
-      if (!dockWasOpen()) G.from("#chat-fab", { scale: 0, duration: 0.5, ease: "back.out(2)", delay: 0.4 });
     }
   }
 

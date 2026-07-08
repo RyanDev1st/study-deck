@@ -206,6 +206,9 @@ kbd { font-family: var(--mono); font-size: .68em; padding: .1em .4em; border: 1p
 .grade-btn[data-g="4"]:hover { border-color: var(--tick); color: var(--tick); }
 .grade-done { font-family: var(--mono); font-size: .72rem; color: var(--faint); }
 .grade-done b { color: var(--ink); }
+/* the grade you picked (persists on revisit; click another to change it) */
+.grade-btn.chosen { border-color: var(--pen); background: var(--pen-soft); box-shadow: inset 0 0 0 1px var(--pen); }
+.grade-btn.chosen .when { color: var(--pen-2); }
 
 .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 22px; }
 .kbd-hint { font-family: var(--mono); font-size: .62rem; color: var(--faint); text-align: center; }
@@ -325,3 +328,47 @@ body.margin-collapsed #btn-open-margin { display: inline-flex; }
   .dock { right: 0; bottom: 0; width: 100vw; height: 74vh; border-radius: var(--r-lg) var(--r-lg) 0 0; }
   .fab { right: 18px; bottom: 18px; }
 }
+
+/* ---- theory (spaced-repetition) toggle on each question ---- */
+.theory-toggle {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-size: .58rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-2); background: transparent; border: 1px dashed var(--line-2); border-radius: 999px;
+  padding: 4px 10px; cursor: pointer; transition: all .15s;
+}
+.theory-toggle .ic { width: 12px; height: 12px; }
+.theory-toggle:hover { color: var(--ink); border-color: var(--ink-2); }
+.theory-toggle.on { color: var(--pen); border-style: solid; border-color: var(--pen); background: var(--pen-soft); }
+
+/* ---- draft-paper button badge ---- */
+#btn-paper { position: relative; }
+#btn-paper .badge {
+  position: absolute; top: -3px; right: -3px; min-width: 15px; height: 15px; padding: 0 4px;
+  font-family: var(--mono); font-size: .58rem; line-height: 15px; text-align: center;
+  color: var(--pen-ink); background: var(--pen); border-radius: 999px;
+}
+.badge.hidden { display: none; }
+
+/* ---- draft-paper panel textarea ---- */
+.paper-text {
+  width: 100%; min-height: 46vh; resize: vertical; margin-top: 6px;
+  font-family: var(--mono); font-size: .82rem; line-height: 1.6; color: var(--ink);
+  background: var(--sunk); border: 1px solid var(--line-2); border-radius: var(--r);
+  padding: 12px 14px; box-sizing: border-box;
+}
+.paper-text:focus { outline: none; border-color: var(--pen); }
+
+/* ---- chat: attached-image preview + images inside messages ---- */
+.dock-imgchip { display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; }
+.dock-imgchip.hidden { display: none; }
+.dock-imgchip img { height: 42px; width: auto; border-radius: 6px; border: 1px solid var(--line-2); }
+.dock-imgchip .img-x {
+  width: 22px; height: 22px; border-radius: 999px; border: 1px solid var(--line-2);
+  background: var(--sunk); color: var(--ink-2); cursor: pointer; font-size: 15px; line-height: 1;
+}
+.dock-imgchip .img-x:hover { color: var(--pen); border-color: var(--pen); }
+.msg-img { display: block; max-width: 100%; margin-top: 8px; border-radius: 8px; border: 1px solid var(--line-2); }
+
+/* ---- MathJax in chat: keep wide display math scrollable, not overflowing the dock ---- */
+.msg mjx-container { max-width: 100%; }
+.msg mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }

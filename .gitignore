@@ -11,3 +11,6 @@ scratch_*
 # personal banks (keep your private question banks out of git)
 banks/private/
 banks/*.local.json
+
+.vercel
+.env*

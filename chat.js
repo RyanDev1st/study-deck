@@ -1,16 +1,19 @@
 /*
- * chat.js - AI tutor backed by OpenRouter (free models only).
- * OpenAI-compatible streaming chat. The model list is fetched live and filtered
- * to free models so the picker always reflects what is currently available.
+ * chat.js - AI Explainer backed by OpenRouter (free models only).
+ * OpenAI-compatible streaming chat. Model list is fetched live and filtered to
+ * free models so the picker always reflects what's currently available.
  *
- * Bring your own key: get a free key at https://openrouter.ai/keys and paste it
- * into Settings. It is stored only in your browser (localStorage), never in this file.
+ * NOTE: the API key below is a default for convenience in this local, offline
+ * study app. It lives in plaintext here and in localStorage. If you share this
+ * folder, remove the key first.
  */
 (function (global) {
   "use strict";
 
-  var LS_KEY = "sd_chat_cfg_v1";
-  var DEFAULT_KEY = ""; // ship empty — users add their own key in Settings
+  var LS_KEY = "aids_chat_cfg_v2";
+  // No key is shipped. Bring your own free OpenRouter key via the in-app Settings panel
+  // (openrouter.ai/keys). It is stored only in this browser's localStorage.
+  var DEFAULT_KEY = "";
   var DEFAULT_CFG = {
     baseUrl: "https://openrouter.ai/api/v1",
     key: DEFAULT_KEY,
@@ -31,27 +34,32 @@
   }
   function saveCfg(cfg) { try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (_) {} }
 
+  // Kept deliberately light: it sets the tone, the context, and a few of the student's learning
+  // preferences, then gets out of the way so the model can tutor however works best.
   var SYSTEM_PROMPT =
-    "You are a friendly, sharp study tutor inside a flashcard app. Adapt to whatever subject the current " +
-    "question is about.\n\n" +
-    "You can always see the exact question on the student's screen: every option labelled A, B, C, D as " +
-    "they see it, each option's explanation, which one is correct, whether the student has answered, and " +
-    "if so which option they picked. Never claim you can't see the question or an option.\n\n" +
-    "How to talk:\n" +
-    "- Answer the student's LATEST message directly and naturally, like a real tutor. Vary how you open; " +
-    "do not use a set formula.\n" +
-    "- If they ask a plain concept question (e.g. 'what does that term mean?'), just explain it clearly. " +
-    "Do NOT re-announce which option they picked every time - that gets robotic. Bring up their specific " +
-    "choice only the FIRST time you explain why they got it wrong, or if they ask about it.\n" +
-    "- A greeting gets a short greeting and an offer to help, not an explanation.\n" +
-    "- Keep it short (2-4 sentences) by default. If they ask for a breakdown, an example, or a " +
-    "visualization, give a clear one (small code or ASCII is welcome).\n\n" +
-    "Answer gate:\n" +
-    "- If the student has NOT answered yet: don't reveal or hint which option is correct. Help them reason " +
-    "it out. Only give the answer if they explicitly ask.\n" +
-    "- If they HAVE answered: explain freely. If they were wrong, connect it to their pick once, then teach " +
-    "the concept. If right, confirm briefly and add the one insight worth remembering.\n\n" +
-    "Use light markdown. Be accurate.";
+    "You are the study tutor built into a Discrete Mathematics flashcard app (counting / combinatorics, " +
+    "generating functions, recurrences, inclusion-exclusion, graphs, trees). Be a genuinely good tutor in " +
+    "whatever way works best — the points below only set the tone and a few of the student's learning " +
+    "preferences; beyond them, use your own judgement.\n\n" +
+    "Each turn you are given a snapshot of the whole app (current subject and section, the student's progress, " +
+    "and the exact question on screen with its options, which one is correct, and whether they have answered), " +
+    "any image they attach, and your own draft paper. Trust this context; never claim you cannot see the question " +
+    "or the app.\n\n" +
+    "The student's learning preferences — please honour these:\n" +
+    "- Show your work. When you do any counting or generating-function problem, show EVERY step from the " +
+    "defining equation to the closed form. Never skip algebra or say it is obvious; gaps confuse them.\n" +
+    "- Write all mathematics in LaTeX so it renders: inline $ ... $ and display $$ ... $$ " +
+    "(e.g. $\\binom{n}{k} = \\frac{n!}{k!(n-k)!}$). Avoid plain-ASCII math.\n" +
+    "- Answer gate: if the student has NOT answered the on-screen question yet, do not reveal or hint which " +
+    "option is correct — help them reason it out, and reveal the answer only if they explicitly ask. Once they " +
+    "have answered, explain freely.\n" +
+    "- When the student has answered and was wrong, explicitly address the option they chose: why it is " +
+    "tempting but wrong, then why the correct option is right.\n" +
+    "- Draft paper: you have a persistent notepad (its contents are shown to you each turn). To remember " +
+    "something durable — a recurring mistake, a preference, a running summary — write a line of the exact form " +
+    "[[NOTE: your terse note]] anywhere in your reply; the app files it into the draft paper and hides it from " +
+    "the chat. Save sparingly and do not repeat a note you already made.\n\n" +
+    "Keep replies focused, use light markdown, and be accurate.";
 
   /*
    * questionContext(q, opts) - builds the full context the model always receives:
@@ -70,23 +78,34 @@
     if (q.type === "FIB") {
       L.push("\nType: fill-in-the-blank.");
       L.push("Correct answer: " + (q.correctAnswer || ""));
-      if (answered && opts.raw != null) L.push("The student typed: \"" + opts.raw + "\"" + (opts.correct ? " (correct)" : " (incorrect)"));
+      if (answered && opts.raw != null) {
+        var correctness = (opts.correct === true) ? " (correct)" : (opts.correct === false) ? " (incorrect)" : "";
+        L.push("The student typed: " + JSON.stringify(String(opts.raw)) + correctness);
+      }
       if (q.explanation) L.push("Explanation: " + q.explanation);
     } else if (Array.isArray(q.answerOptions)) {
-      L.push("\nOptions (labelled exactly as the student sees them):");
-      q.answerOptions.forEach(function (o, i) {
+      L.push("\nOptions (labelled exactly as the student sees them on screen):");
+      // Options are SHUFFLED per question; opts.order maps display position -> original index,
+      // so the letters here match what the student sees (the correct one is NOT always A).
+      var order = Array.isArray(opts.order) && opts.order.length === q.answerOptions.length
+        ? opts.order : q.answerOptions.map(function (_, i) { return i; });
+      order.forEach(function (origIdx, dispPos) {
+        var o = q.answerOptions[origIdx];
         var correct = (o.isCorrect === "true" || o.isCorrect === true);
         var tags = "";
         if (correct) tags += "   [THIS IS THE CORRECT OPTION]";
-        if (answered && i === chose) tags += "   [THE STUDENT CHOSE THIS]";
-        L.push(String.fromCharCode(65 + i) + ". " + o.answerText + tags);
+        if (answered && origIdx === chose) tags += "   [THE STUDENT CHOSE THIS]";
+        L.push(String.fromCharCode(65 + dispPos) + ". " + o.answerText + tags);
         if (o.explanation) L.push("     why: " + o.explanation);
       });
     }
     if (q.sectionTitle) L.push("\nTopic: " + q.sectionTitle);
     L.push("\n=== ANSWER GATE ===");
     if (answered) {
-      var pickLabel = (chose >= 0) ? " and picked option " + String.fromCharCode(65 + chose) : "";
+      // map the chosen ORIGINAL index to the DISPLAY letter the student actually saw
+      var dispChoose = chose;
+      if (chose >= 0 && Array.isArray(opts.order) && opts.order.indexOf(chose) >= 0) dispChoose = opts.order.indexOf(chose);
+      var pickLabel = (chose >= 0) ? " and picked option " + String.fromCharCode(65 + dispChoose) : "";
       L.push("The student HAS ANSWERED" + pickLabel + (opts.correct != null ? " (" + (opts.correct ? "correct" : "incorrect") + ")" : "") +
         ". You may explain freely. Answer their latest message; reference their pick only when it is relevant, not as a fixed opener.");
     } else {
@@ -101,7 +120,7 @@
     return {
       "Content-Type": "application/json",
       "Authorization": "Bearer " + cfg.key,
-      "X-Title": "Intro DS AI Study Deck"
+      "X-Title": "Discrete Math Study Deck"
     };
   }
 

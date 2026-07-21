@@ -1,4 +1,24 @@
-# OS / editor
+# ---- private content (NOT published) ----
+# The full hand-written question bank + reference sheets stay private.
+# Copy the committed *.sample.js files to run the app (see README).
+data.js
+theory.js
+# Stale leftovers from the previous version of the app
+cheatsheet.html
+cheatsheet.pdf
+
+# secrets / local
+.env
+.env.*
+*.pem
+.claude/
+
+# caches / build
+__pycache__/
+*.pyc
+node_modules/
+dist/
+build/
 .DS_Store
 Thumbs.db
 .vscode/
